@@ -38,6 +38,8 @@ REGLAS_INTENCION = [
     ("desinteres", ["ok", "vale", "ah", "ya", "como digas", "da igual", "me da igual", "jaja", "jeje", "ok ok"]),
     ("curiosidad", ["qué tal", "cómo estás", "qué haces", "cómo te va", "en qué andas", "qué cuentas"]),
     ("tristeza", ["triste", "deprimido", "mal", "solo", "soledad", "llorar", "me siento mal"]),
+    ("agradecimiento", ["gracias", "muchas gracias", "te agradezco", "mil gracias"]),
+    ("saludo", ["hola", "buenas", "buenos dias", "buenas tardes", "buenas noches", "hey", "saludos"]),
 ]
 
 def detectar_intencion(texto):
@@ -52,6 +54,10 @@ def detectar_intencion(texto):
 def calcular_ghosting(texto, intencion, emocion):
     score = 0
     texto = texto.lower()
+
+    # Saludos y agradecimientos son mensajes cortos pero no indican ghosting
+    if intencion in ("saludo", "agradecimiento"):
+        return 0
     
     # Mensajes muy cortos
     if len(texto) <= 5:

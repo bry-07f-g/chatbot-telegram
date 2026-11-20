@@ -76,6 +76,16 @@ INTERPRETACIONES = {
         "💬 Quiere iniciar o mantener una conversación.",
         "🔍 Busca conocer más sobre ti.",
     ],
+    "saludo": [
+        "👋 Está iniciando la conversación de forma amable.",
+        "💬 Quiere abrir el diálogo o saber cómo estás.",
+        "🙂 No hay señales de conflicto; es un saludo.",
+    ],
+    "agradecimiento": [
+        "🙏 Está agradeciendo algo que hiciste o dijiste.",
+        "😊 Hay buena disposición y reconocimiento hacia ti.",
+        "🤝 La conversación va en un tono positivo.",
+    ],
     "normal": [
         "💬 Es una conversación cotidiana sin carga emocional.",
         "✅ No hay señales de conflicto ni urgencia.",
@@ -83,68 +93,134 @@ INTERPRETACIONES = {
     ],
 }
 
-# SUGERENCIAS: Cómo responder al mensaje (para TI)
+# SUGERENCIAS: respuestas listas para enviar + un consejo (para TI)
 SUGERENCIAS = {
-    "reclamo": [
-        "🗣️ Responde: 'Entiendo que te sientes ignorado, no fue mi intención. Hablemos.'",
-        "⏸️ Reconoce su molestia antes de dar explicaciones: 'Tienes razón, no respondí rápido.'",
-        "🤝 Pregunta: '¿Qué puedo hacer para que no te sientas así?'",
-    ],
-    "celos": [
-        "🧠 Responde con calma: 'No hay nadie más, pero entiendo tu inseguridad.'",
-        "💬 Valida su emoción: 'Veo que esto te preocupa, hablemos sin pelear.'",
-        "🔐 Reafirma: 'Eres importante para mí. ¿Podemos hablar de esto tranquilos?'",
-    ],
-    "agresion": [
-        "🌬️ No respondas con agresión. Di: 'Esto se está poniendo feo, hablemos más tarde.'",
-        "🚫 Establece límite: 'No voy a responder si me hablas así.'",
-        "⏰ Tómate un tiempo: 'Mejor hablamos cuando estemos más calmados.'",
-    ],
-    "tristeza": [
-        "👥 Responde: 'Estoy aquí para ti. ¿Quieres hablar de lo que pasa?'",
-        "💬 Muestra apoyo: 'Lamento que te sientas así, cuentas conmigo.'",
-        "🤗 Ofrece compañía: '¿Necesitas desahogarte o prefieres distraerte?'",
-    ],
-    "manipulacion": [
-        "🚩 No cedas por culpa. Di: 'No me gusta que me condiciones así.'",
-        "🗣️ Marca límite: 'Si me quieres pedir algo, hazlo sin chantajes.'",
-        "⚖️ Responde neutro: 'Te escucho, pero no voy a reaccionar desde la culpa.'",
-    ],
-    "control": [
-        "🤝 Responde: 'Confío en ti y espero que tú confíes en mí.'",
-        "📱 Marca espacio: 'Está bien que quieras saber, pero también necesito mi espacio.'",
-        "🧘 Tranquiliza: 'No pasa nada, pero no puedo responder todo el tiempo.'",
-    ],
-    "ruptura": [
-        "💬 Responde: 'Hablemos esto en persona, es importante.'",
-        "🤔 Pide tiempo: 'No tomemos decisiones en caliente. Hablemos mañana.'",
-        "🕊️ Si es firme: 'Lo respeto si es tu decisión, pero me duele.'",
-    ],
-    "desinteres": [
-        "🧐 Pregunta: '¿Estás bien? Parece que no tienes ganas de hablar.'",
-        "💬 Dale espacio: 'Cuando quieras hablar, aquí estoy.'",
-        "⏸️ No insistas: 'Ok, hablamos cuando tengas tiempo.'",
-    ],
-    "inseguridad": [
-        "🔍 Responde: 'Estoy contigo, no tienes nada que temer.'",
-        "💬 Tranquiliza: 'Si algo te preocupa, pregúntame sin miedo.'",
-        "📖 Reafirma: 'Me importas y no tengo nada que ocultar.'",
-    ],
-    "afecto": [
-        "🌸 Corresponde: 'Yo también te quiero mucho ❤️'",
-        "💌 Agradece: 'Qué bonito mensaje, gracias por tus palabras.'",
-        "🎁 Sorprende: 'Me hiciste el día, te quiero igual.'",
-    ],
-    "curiosidad": [
-        "🔍 Responde con entusiasmo: 'Todo bien, ¿y tú? Cuéntame.'",
-        "💬 Aprovecha: 'Justo pensaba en ti. ¿Qué has hecho?'",
-        "🌟 Sigue la conversación: 'Me alegra que preguntes, te cuento...'",
-    ],
-    "normal": [
-        "👍 Responde con naturalidad: 'Todo bien, ¿y tú?'",
-        "💬 Sigue la conversación: 'Qué bueno, seguimos hablando.'",
-        "🌟 Mantén el tono: 'Genial, cualquier cosa me dices.'",
-    ],
+    "reclamo": {
+        "respuestas": [
+            "Tienes razón, me demoré en responderte y lo siento. Ya estoy aquí, cuéntame.",
+            "Perdón por dejarte esperando, no fue mi intención ignorarte. ¿Hablamos ahora?",
+            "Entiendo que te molestó que no respondiera. Estaba ocupado, pero me importas. ¿Qué necesitas?",
+            "Gracias por decírmelo. Voy a tratar de avisarte cuando no pueda responder.",
+        ],
+        "consejo": "Primero reconoce su molestia y después explica. Si empiezas con excusas, se siente peor.",
+    },
+    "celos": {
+        "respuestas": [
+            "Estaba con un amigo, no pasa nada raro. Si algo te preocupa, dímelo con calma.",
+            "Entiendo que te genere duda. Te cuento con gusto cómo estuvo mi día.",
+            "Eres importante para mí y no tengo nada que ocultar. ¿Qué es lo que te inquieta?",
+            "No hay nadie más. Prefiero que hablemos de esto tranquilos y no peleando.",
+        ],
+        "consejo": "No te pongas a la defensiva. Responde con calma y con datos simples; eso baja la tensión.",
+    },
+    "agresion": {
+        "respuestas": [
+            "Así no me gusta hablar. Cuando estemos más tranquilos lo conversamos.",
+            "Entiendo que estás molesto, pero no voy a seguir si me tratas así.",
+            "Prefiero parar aquí para no decir algo de lo que me arrepienta. Hablamos más tarde.",
+            "Veo que estás muy enojado. Dime qué pasó y lo resolvemos con respeto.",
+        ],
+        "consejo": "No respondas con insultos ni en caliente. Poner un límite claro y pausar la conversación suele funcionar mejor.",
+    },
+    "tristeza": {
+        "respuestas": [
+            "Lamento mucho que estés así. Estoy aquí para escucharte, ¿qué pasó?",
+            "Cuenta conmigo para lo que necesites. ¿Quieres hablar o prefieres que te acompañe un rato?",
+            "No estás solo en esto. Si quieres desahogarte, te leo con calma.",
+            "Gracias por contármelo. ¿Hay algo que pueda hacer para ayudarte hoy?",
+        ],
+        "consejo": "No minimices lo que siente con frases como 'no es para tanto'. Escuchar primero ayuda más que dar soluciones.",
+    },
+    "manipulacion": {
+        "respuestas": [
+            "Quiero ayudarte, pero no me gusta que me pidas las cosas con culpa. Dímelo directo.",
+            "Te escucho, pero voy a decidir con calma y no por presión.",
+            "Entiendo lo que sientes. Hablemos de lo que necesitas sin condiciones.",
+            "Si te molestó algo, podemos hablarlo. Los chantajes no me ayudan a entenderte.",
+        ],
+        "consejo": "No cedas solo por sentirte culpable. Puedes ser amable y aun así mantener tu decisión.",
+    },
+    "control": {
+        "respuestas": [
+            "Estoy bien, no te preocupes. Te cuento más tarde cómo me fue.",
+            "Confío en ti y espero que confíes en mí. Necesito también mi espacio.",
+            "Está bien que quieras saber de mí, pero no puedo avisar cada cosa que hago.",
+            "Hablemos de cómo podemos sentirnos tranquilos los dos sin tener que vigilarnos.",
+        ],
+        "consejo": "Si pasa seguido, conversa sobre acuerdos de confianza. Compartir todo por presión no es sano.",
+    },
+    "ruptura": {
+        "respuestas": [
+            "Esto es importante y no quiero hablarlo por mensaje. ¿Podemos vernos o llamarnos?",
+            "No tomemos una decisión tan grande en caliente. Hablemos mañana con calma.",
+            "Me duele leer eso. ¿Qué es lo que más te ha pesado últimamente?",
+            "Si de verdad lo sientes así, lo voy a respetar, pero quiero entender por qué.",
+        ],
+        "consejo": "Evita rogar o contestar con rabia. Pide hablar en persona o por llamada.",
+    },
+    "desinteres": {
+        "respuestas": [
+            "Te noto distante. ¿Estás bien o prefieres que hablemos más tarde?",
+            "Cuando tengas tiempo me escribes, aquí estaré.",
+            "Si no es buen momento, no hay problema. Hablamos luego.",
+            "¿Pasó algo? Sé que a veces uno no tiene ganas de hablar, y está bien.",
+        ],
+        "consejo": "No insistas con muchos mensajes seguidos. Deja una puerta abierta y dale espacio.",
+    },
+    "inseguridad": {
+        "respuestas": [
+            "Estoy contigo, puedes preguntarme lo que quieras sin miedo.",
+            "Me importas y no tengo nada que ocultarte. ¿Qué te preocupa?",
+            "Es normal tener dudas a veces. Hablemos de ellas con calma.",
+            "Gracias por ser sincero conmigo. Cuenta con mi apoyo.",
+        ],
+        "consejo": "Responde con claridad y sin ironía. Una respuesta concreta tranquiliza más que una larga.",
+    },
+    "afecto": {
+        "respuestas": [
+            "Yo también te quiero mucho ❤️",
+            "Qué lindo mensaje, me alegraste el día. Gracias por decírmelo.",
+            "Me haces muy feliz, yo también te extraño.",
+            "Gracias por tus palabras. Me encanta tenerte en mi vida.",
+        ],
+        "consejo": "Responde con sinceridad; no hace falta algo largo. Un detalle personal hace que se sienta más real.",
+    },
+    "curiosidad": {
+        "respuestas": [
+            "¡Todo bien por aquí! ¿Y tú, cómo vas? Cuéntame.",
+            "Bien, gracias por preguntar. Hoy estuve muy ocupado, ¿y tú qué hiciste?",
+            "Aquí andamos, con ganas de saber de ti. ¿Cómo te fue hoy?",
+            "Todo tranquilo. Me alegra que me escribas, ¿qué cuentas?",
+        ],
+        "consejo": "Devuelve la pregunta para que la conversación siga fluyendo.",
+    },
+    "saludo": {
+        "respuestas": [
+            "¡Hola! ¿Cómo estás?",
+            "¡Hola! Qué gusto saludarte, ¿cómo va todo?",
+            "¡Buenas! ¿Qué tal tu día?",
+            "¡Hola! Aquí estoy, cuéntame.",
+        ],
+        "consejo": "Un saludo amable y una pregunta corta abren bien la conversación.",
+    },
+    "agradecimiento": {
+        "respuestas": [
+            "¡De nada! Para eso estamos.",
+            "Con gusto, me alegra haber ayudado.",
+            "No hay de qué, cuando necesites algo me dices.",
+            "A ti por confiar en mí. ¡Siempre a la orden!",
+        ],
+        "consejo": "Responde breve y cálido. No hace falta explicar más.",
+    },
+    "normal": {
+        "respuestas": [
+            "Todo bien, ¿y tú? Cuéntame un poco más.",
+            "Entiendo. ¿Y cómo te fue con eso?",
+            "Qué bueno, sigamos hablando.",
+            "Perfecto, cualquier cosa me avisas.",
+        ],
+        "consejo": "El mensaje no tiene carga emocional fuerte. Responde con naturalidad y con una pregunta abierta.",
+    },
 }
 
 EMOJIS = {
@@ -159,6 +235,8 @@ EMOJIS = {
     "inseguridad": "😟",
     "afecto": "💕",
     "curiosidad": "🤔",
+    "saludo": "👋",
+    "agradecimiento": "🙏",
     "normal": "💬",
 }
 
@@ -181,6 +259,11 @@ def construir_barra(valor: int) -> str:
 def obtener_texto(diccionario, clave, default="normal"):
     return random.choice(diccionario.get(clave, diccionario[default]))
 
+def obtener_sugerencia(intencion: str):
+    """Devuelve (respuesta lista para enviar, consejo) según la intención."""
+    datos = SUGERENCIAS.get(intencion, SUGERENCIAS["normal"])
+    return random.choice(datos["respuestas"]), datos["consejo"]
+
 def formatear_respuesta(datos: dict) -> str:
     return (
         f"{datos['emoji_principal']} *Análisis del mensaje que te enviaron*\n"
@@ -192,7 +275,8 @@ def formatear_respuesta(datos: dict) -> str:
         f"🔥 *Riesgo:* {datos['riesgo']}\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
         f"💡 *Qué significa:*\n{datos['interpretacion']}\n\n"
-        f"💬 *Cómo responder:*\n{datos['sugerencia']}"
+        f"💬 *Puedes responder:*\n\"{datos['sugerencia']}\"\n\n"
+        f"💡 *Consejo:* {datos['consejo']}"
     )
 
 # ─── Comandos ───────────────────────────────────────────
@@ -249,8 +333,8 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "ghosting_bar": construir_barra(ghosting),
             "riesgo": riesgo,
             "interpretacion": obtener_texto(INTERPRETACIONES, intencion),
-            "sugerencia": obtener_texto(SUGERENCIAS, intencion),
         }
+        datos["sugerencia"], datos["consejo"] = obtener_sugerencia(intencion)
         
         respuesta = formatear_respuesta(datos)
         await update.message.reply_text(respuesta, parse_mode="Markdown")
