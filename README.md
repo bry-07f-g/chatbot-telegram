@@ -78,7 +78,7 @@ pip install -r requirements.txt
 
 **`requirements.txt`:**
 ```txt
-python-telegram-bot==20.7
+python-telegram-bot>=22.0
 pysentimiento>=0.7.3
 transformers>=4.6.1
 torch>=2.0.0
