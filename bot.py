@@ -1,9 +1,11 @@
+import asyncio
 import os
 import random
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 
 from predict import analizar_texto
+import traductor
 
 # ─── Configuración ──────────────────────────────────────
 
@@ -200,7 +202,8 @@ MENSAJE_AYUDA = (
     "Pégame un mensaje que te hayan enviado y te digo qué significa y cómo responderlo.\n\n"
     "*Comandos:*\n"
     "/start - Saludo e introducción\n"
-    "/ayuda - Muestra esta ayuda\n\n"
+    "/ayuda - Muestra esta ayuda\n"
+    "/traducir <idioma> <texto> - Traduce y envía el audio de pronunciación\n\n"
     "*Ejemplo:* escribe `por qué no me respondes` y recibirás el análisis."
 )
 
@@ -210,6 +213,23 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def ayuda(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(MENSAJE_AYUDA, parse_mode="Markdown")
+
+async def traducir(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    datos = traductor.parsear_comando(context.args)
+    if datos is None:
+        await update.message.reply_text(traductor.USO)
+        return
+    codigo, nombre, texto = datos
+    espera = await update.message.reply_text("⏳ Traduciendo y generando audio...")
+    try:
+        # Las librerías son bloqueantes: se ejecutan en un hilo para no congelar el bot
+        resultado = await asyncio.to_thread(traductor.traducir, texto, codigo)
+        await espera.edit_text(traductor.formatear(texto, resultado, codigo), parse_mode="HTML")
+        audio = await asyncio.to_thread(traductor.generar_audio, resultado, codigo)
+        await update.message.reply_voice(audio, caption=f"🔊 Pronunciación en {nombre}")
+    except Exception as e:
+        print(f"❌ Error en /traducir: {e}")
+        await espera.edit_text("⚠️ No pude traducir ese texto. Intenta de nuevo.")
 
 # ─── Handler principal ──────────────────────────────────
 
@@ -248,6 +268,7 @@ def main():
     app = ApplicationBuilder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("ayuda", ayuda))
+    app.add_handler(CommandHandler("traducir", traducir))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, responder))
     
     print("🟢 Bot corriendo... Esperando mensajes")

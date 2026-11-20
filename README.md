@@ -138,6 +138,14 @@ Verás algo como:
 3. El bot te responderá con un análisis completo del mensaje
 4. **El análisis incluye sugerencias de cómo responder**
 
+### Comandos
+
+| Comando | Qué hace |
+|---------|----------|
+| `/start` | Saludo e introducción |
+| `/ayuda` | Lista de comandos |
+| `/traducir <idioma> <texto>` | Traduce el texto y envía un audio con la pronunciación. Ej: `/traducir japonés hola como estas` |
+
 ---
 
 ## 📝 Ejemplos de Mensajes

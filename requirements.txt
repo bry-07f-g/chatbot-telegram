@@ -3,3 +3,5 @@ pysentimiento>=0.7.3
 transformers>=4.6.1
 torch>=2.0.0
 scikit-learn
+deep-translator
+gTTS
