@@ -1,9 +1,12 @@
 import asyncio
 import os
 import random
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.ext import (
+    ApplicationBuilder, CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler, filters,
+)
 
+import aprendizaje
 from predict import analizar_texto
 import traductor
 
@@ -75,6 +78,11 @@ INTERPRETACIONES = {
         "🤔 Tiene interés genuino en ti y tu vida.",
         "💬 Quiere iniciar o mantener una conversación.",
         "🔍 Busca conocer más sobre ti.",
+    ],
+    "crisis": [
+        "🚨 Habla de sentirse sin salida o de hacerse daño.",
+        "💔 Hay un dolor muy fuerte que necesita atención.",
+        "🫂 Lo más importante es que no esté solo.",
     ],
     "saludo": [
         "👋 Está iniciando la conversación de forma amable.",
@@ -194,6 +202,15 @@ SUGERENCIAS = {
         ],
         "consejo": "Devuelve la pregunta para que la conversación siga fluyendo.",
     },
+    "crisis": {
+        "respuestas": [
+            "Gracias por contármelo, me importa lo que sientes. ¿Estás a salvo en este momento?",
+            "No estás solo, estoy aquí contigo. ¿Quieres que hablemos ahora?",
+            "Lo que me dices es importante. ¿Hay alguien cerca que pueda acompañarte?",
+            "Quiero ayudarte. ¿Buscamos juntos apoyo de alguien de confianza o de un profesional?",
+        ],
+        "consejo": "Responde con calma y sin juzgar. Si hay riesgo inmediato, llama al 123 o busca ayuda cercana.",
+    },
     "saludo": {
         "respuestas": [
             "¡Hola! ¿Cómo estás?",
@@ -223,6 +240,85 @@ SUGERENCIAS = {
     },
 }
 
+# SOLUCIONES: ideas concretas para resolver la situación (para TI)
+SOLUCIONES = {
+    "reclamo": [
+        "Acordar un tiempo razonable de respuesta y cumplirlo.",
+        "Avisar cuando no puedas responder, aunque sea con un mensaje corto.",
+        "Fijar un momento para hablar con calma y sin interrupciones.",
+    ],
+    "celos": [
+        "Hablar de lo que le preocupa sin acusaciones ni interrogatorios.",
+        "Compartir tus planes con anticipación para generar confianza.",
+        "Acordar entre los dos qué necesitan saber del otro y qué es espacio personal.",
+    ],
+    "agresion": [
+        "Pausar la conversación al menos 30 minutos antes de responder.",
+        "Retomar el tema por llamada o en persona, donde hay menos malentendidos.",
+        "Si se repite, poner un límite claro sobre cómo quieres que te hablen y apoyarte en alguien de confianza.",
+    ],
+    "tristeza": [
+        "Escuchar sin interrumpir ni dar consejos de inmediato.",
+        "Ofrecer compañía concreta: una llamada, una caminata o verse.",
+        "Si la tristeza dura semanas, sugerir hablar con un profesional.",
+    ],
+    "manipulacion": [
+        "Pedirle que diga directamente lo que necesita.",
+        "Tomarte un tiempo antes de decidir, sin sentirte culpable.",
+        "Mantener tu decisión con amabilidad; si es constante, conversar sobre los límites.",
+    ],
+    "control": [
+        "Conversar sobre qué le genera inseguridad.",
+        "Acordar un nivel de contacto cómodo para los dos.",
+        "Si hay presión constante, hablar con alguien de confianza o un orientador.",
+    ],
+    "ruptura": [
+        "Pedir hablar en persona o por llamada, no por chat.",
+        "Preguntar qué cambios concretos haría falta.",
+        "Si deciden terminar, hacerlo con respeto y darse tiempo para procesarlo.",
+    ],
+    "desinteres": [
+        "Preguntar de forma abierta si pasa algo, sin presionar.",
+        "Dar unas horas de espacio y escribir de nuevo con un mensaje ligero.",
+        "Proponer un plan concreto en lugar de mensajes largos.",
+    ],
+    "inseguridad": [
+        "Responder con claridad y ejemplos concretos.",
+        "Reforzar con acciones, no solo con palabras.",
+        "Animarle a expresar sus dudas apenas aparezcan.",
+    ],
+    "afecto": [
+        "Corresponder con un detalle personal.",
+        "Proponer un plan para verse o hacer algo juntos.",
+        "Mantener la comunicación constante y sincera.",
+    ],
+    "curiosidad": [
+        "Responder con algo concreto de tu día.",
+        "Devolver una pregunta para que la charla fluya.",
+        "Si hay mucho que contar, proponer una llamada o nota de voz.",
+    ],
+    "saludo": [
+        "Responder el saludo y hacer una pregunta corta.",
+        "Si hace tiempo que no hablan, mencionar algo en común.",
+        "Aprovechar para proponer un tema o un plan.",
+    ],
+    "agradecimiento": [
+        "Responder con calidez y brevedad.",
+        "Ofrecer ayuda para lo que siga.",
+        "Mantener el buen ánimo de la conversación.",
+    ],
+    "normal": [
+        "Mantener la conversación con preguntas abiertas.",
+        "Compartir algo propio para que fluya.",
+        "Si necesitas algo concreto, plantearlo de forma directa.",
+    ],
+    "crisis": [
+        "Tomar en serio lo que dice y no minimizarlo.",
+        "Preguntar con calma si está a salvo ahora mismo y no dejarle solo si hay peligro.",
+        "Animarle a hablar con una persona de confianza o un profesional; si hay peligro inmediato, llamar al 123.",
+    ],
+}
+
 EMOJIS = {
     "reclamo": "😔",
     "celos": "😒",
@@ -235,6 +331,7 @@ EMOJIS = {
     "inseguridad": "😟",
     "afecto": "💕",
     "curiosidad": "🤔",
+    "crisis": "🚨",
     "saludo": "👋",
     "agradecimiento": "🙏",
     "normal": "💬",
@@ -264,20 +361,38 @@ def obtener_sugerencia(intencion: str):
     datos = SUGERENCIAS.get(intencion, SUGERENCIAS["normal"])
     return random.choice(datos["respuestas"]), datos["consejo"]
 
-def formatear_respuesta(datos: dict) -> str:
-    return (
-        f"{datos['emoji_principal']} *Análisis del mensaje que te enviaron*\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"{datos['emoji_emocion']} *Emoción detectada:* {datos['emocion']}\n"
-        f"🚩 *Toxicidad:* {datos['toxicidad']}\n"
-        f"🧠 *Intención:* {datos['intencion']}\n"
-        f"💔 *Ghosting:* {datos['ghosting_bar']} {datos['ghosting']}%\n"
-        f"🔥 *Riesgo:* {datos['riesgo']}\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"💡 *Qué significa:*\n{datos['interpretacion']}\n\n"
-        f"💬 *Puedes responder:*\n\"{datos['sugerencia']}\"\n\n"
-        f"💡 *Consejo:* {datos['consejo']}"
-    )
+NOMBRES_EMOCION = {"neutral": "Sin emoción clara"}
+
+
+def formatear_respuesta(d: dict) -> str:
+    lineas = [
+        f"{d['emoji_principal']} *Análisis del mensaje que te enviaron*",
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━",
+        f"{d['emoji_emocion']} *Emoción detectada:* {d['emocion']}",
+    ]
+    if d["otras_emociones"]:
+        lineas.append(f"   ↳ También: {d['otras_emociones']}")
+    lineas += [
+        f"🚩 *Toxicidad:* {d['toxicidad']} ({d['toxicidad_nivel']}%)",
+        f"🧠 *Intención:* {d['intencion']}{d['origen']}",
+        f"💔 *Ghosting:* {d['ghosting_bar']} {d['ghosting']}%",
+        f"🔥 *Riesgo:* {d['riesgo']}",
+    ]
+    if d["senales"]:
+        lineas.append(f"🔎 *Señales:* {d['senales']}")
+    lineas += [
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━",
+        f"💡 *Qué significa:*\n{d['interpretacion']}",
+        "",
+        f"💬 *Puedes responder:*\n\"{d['sugerencia']}\"",
+        "",
+        f"🛠️ *Ideas para resolverlo:*\n{d['soluciones']}",
+        "",
+        f"📌 *Consejo:* {d['consejo']}",
+        "",
+        "¿Acerté con la intención? Tu respuesta me ayuda a aprender 👇",
+    ]
+    return "\n".join(lineas)
 
 # ─── Comandos ───────────────────────────────────────────
 
@@ -287,6 +402,7 @@ MENSAJE_AYUDA = (
     "*Comandos:*\n"
     "/start - Saludo e introducción\n"
     "/ayuda - Muestra esta ayuda\n"
+    "/aprendizaje - Cuántos mensajes he aprendido de tus correcciones\n"
     "/traducir <idioma> <texto> - Traduce y envía el audio de pronunciación\n\n"
     "*Ejemplo:* escribe `por qué no me respondes` y recibirás el análisis."
 )
@@ -317,31 +433,105 @@ async def traducir(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ─── Handler principal ──────────────────────────────────
 
+PENDIENTES_MAX = 500
+
+
+def _guardar_pendiente(context, chat_id, msg_id, texto, intencion):
+    pendientes = context.bot_data.setdefault("pendientes", {})
+    pendientes[(chat_id, msg_id)] = {"texto": texto, "intencion": intencion}
+    while len(pendientes) > PENDIENTES_MAX:
+        pendientes.pop(next(iter(pendientes)))
+
+
 async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         texto = update.message.text
-        
-        emocion, toxicidad, ghosting, riesgo, intencion, confianza = analizar_texto(texto)
-        
+        r = analizar_texto(texto)
+        intencion = r["intencion"]
+
+        sugerencia, consejo = obtener_sugerencia(intencion)
+        principal = r["emocion"]
+        porcentaje = f" ({r['emocion_confianza']}%)" if r["emocion_confianza"] else ""
+        otras = " · ".join(
+            f"{NOMBRES_EMOCION.get(n, n.capitalize())} {p}%" for n, p in r["emociones_top"][1:]
+        )
         datos = {
             "emoji_principal": EMOJIS.get(intencion, "💬"),
-            "emoji_emocion": EMOJIS_EMOCION.get(emocion, "😐"),
-            "emocion": emocion.capitalize(),
-            "toxicidad": "🔴 Alta" if toxicidad == "si" else "🟢 Baja",
+            "emoji_emocion": EMOJIS_EMOCION.get(principal, "😐"),
+            "emocion": NOMBRES_EMOCION.get(principal, principal.capitalize()) + porcentaje,
+            "otras_emociones": otras,
+            "toxicidad": "🔴 Alta" if r["toxicidad"] == "si" else "🟢 Baja",
+            "toxicidad_nivel": r["toxicidad_nivel"],
             "intencion": intencion.capitalize(),
-            "ghosting": ghosting,
-            "ghosting_bar": construir_barra(ghosting),
-            "riesgo": riesgo,
+            "origen": " 🧠 (aprendido de tus correcciones)" if r["origen"] == "aprendido" else "",
+            "ghosting": r["ghosting"],
+            "ghosting_bar": construir_barra(r["ghosting"]),
+            "riesgo": r["riesgo"],
+            "senales": ", ".join(r["senales"]),
             "interpretacion": obtener_texto(INTERPRETACIONES, intencion),
+            "sugerencia": sugerencia,
+            "consejo": consejo,
+            "soluciones": "\n".join("• " + s for s in SOLUCIONES.get(intencion, SOLUCIONES["normal"])),
         }
-        datos["sugerencia"], datos["consejo"] = obtener_sugerencia(intencion)
-        
-        respuesta = formatear_respuesta(datos)
-        await update.message.reply_text(respuesta, parse_mode="Markdown")
-        
+
+        msg_id = update.message.message_id
+        _guardar_pendiente(context, update.effective_chat.id, msg_id, texto, intencion)
+        teclado = InlineKeyboardMarkup([[
+            InlineKeyboardButton("✅ Acertó", callback_data=f"ok|{msg_id}"),
+            InlineKeyboardButton("✏️ Corregir", callback_data=f"fix|{msg_id}"),
+        ]])
+        await update.message.reply_text(
+            formatear_respuesta(datos), parse_mode="Markdown", reply_markup=teclado
+        )
+
     except Exception as e:
         print(f"❌ Error: {e}")
         await update.message.reply_text("⚠️ Ocurrió un error al procesar el mensaje.")
+
+
+async def boton(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Botones de retroalimentación: así el bot aprende mientras se usa."""
+    q = update.callback_query
+    await q.answer()
+    try:
+        partes = q.data.split("|")
+        accion = partes[0]
+        clave = (q.message.chat_id, int(partes[1]))
+        pendiente = context.bot_data.get("pendientes", {}).get(clave)
+
+        if pendiente is None:
+            await q.edit_message_reply_markup(reply_markup=None)
+            await q.message.reply_text("⌛ Ya no tengo ese mensaje guardado. Envíalo otra vez para corregirlo.")
+            return
+
+        if accion == "ok":
+            total = aprendizaje.aprender(pendiente["texto"], pendiente["intencion"])
+            await q.edit_message_reply_markup(reply_markup=None)
+            await q.message.reply_text(f"✅ ¡Gracias! Guardé este ejemplo. Ya he aprendido {total} mensajes.")
+
+        elif accion == "fix":
+            botones = [
+                InlineKeyboardButton(f"{EMOJIS.get(n, '💬')} {n.capitalize()}", callback_data=f"set|{partes[1]}|{n}")
+                for n in INTERPRETACIONES
+            ]
+            filas = [botones[i:i + 2] for i in range(0, len(botones), 2)]
+            await q.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(filas))
+
+        elif accion == "set" and partes[2] in INTERPRETACIONES:
+            nueva = partes[2]
+            total = aprendizaje.aprender(pendiente["texto"], nueva)
+            pendiente["intencion"] = nueva
+            await q.edit_message_reply_markup(reply_markup=None)
+            await q.message.reply_text(
+                f"🧠 Aprendido. Los mensajes parecidos a ese ahora los clasifico como {nueva.capitalize()}. "
+                f"Ya he aprendido {total} mensajes."
+            )
+    except Exception as e:
+        print(f"❌ Error en botón: {e}")
+
+
+async def estado_aprendizaje(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(f"🧠 Mensajes aprendidos de tus correcciones: {aprendizaje.total()}")
 
 # ─── Inicialización ─────────────────────────────────────
 
@@ -353,6 +543,8 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("ayuda", ayuda))
     app.add_handler(CommandHandler("traducir", traducir))
+    app.add_handler(CommandHandler("aprendizaje", estado_aprendizaje))
+    app.add_handler(CallbackQueryHandler(boton))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, responder))
     
     print("🟢 Bot corriendo... Esperando mensajes")

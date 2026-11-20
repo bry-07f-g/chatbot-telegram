@@ -144,6 +144,7 @@ Verás algo como:
 |---------|----------|
 | `/start` | Saludo e introducción |
 | `/ayuda` | Lista de comandos |
+| `/aprendizaje` | Cuántos mensajes ha aprendido de tus correcciones |
 | `/traducir <idioma> <texto>` | Traduce el texto y envía un audio con la pronunciación. Ej: `/traducir japonés hola como estas` |
 
 ---
@@ -181,13 +182,27 @@ Está expresando cariño y buenos sentimientos. Quiere acercarse y fortalecer el
 
 ---
 
+## 🧠 Cómo analiza y cómo aprende
+
+1. **Modelos de IA** (pysentimiento): emoción y agresividad/odio del mensaje.
+2. **Léxico en español**: detecta insultos, amenazas, groserías y emociones aunque el texto venga con tildes mal puestas, letras repetidas (`idiotaaa`) o escrito tipo `1d10ta`. También marca MAYÚSCULAS sostenidas y exceso de signos de exclamación.
+3. **Reglas de intención** por frases (reclamo, celos, ruptura, etc.).
+4. **Memoria que aprende**: bajo cada análisis el bot muestra los botones ✅ Acertó / ✏️ Corregir. Cada respuesta se guarda en `aprendizaje.json` y los mensajes parecidos usan la intención aprendida, incluso después de reiniciar el bot. Ese archivo es local y no se sube a GitHub.
+5. **Ideas para resolverlo**: por cada intención el bot sugiere pasos concretos, una respuesta lista para enviar y un consejo.
+
+Si el mensaje menciona hacerse daño, el bot lo marca como riesgo alto y recomienda buscar apoyo (línea 123 si hay peligro inmediato).
+
+---
+
 ## 📁 Estructura del Proyecto
 
 ```
 chatbot-telegram/
 │
 ├── bot.py                 # Código principal del bot de Telegram
-├── predict.py             # Motor de análisis con IA y reglas
+├── predict.py             # Motor de análisis: IA + léxico + reglas
+├── aprendizaje.py         # Memoria que aprende de las correcciones
+├── traductor.py           # Comando /traducir
 ├── requirements.txt       # Dependencias del proyecto
 ├── README.md              # Documentación
 │
