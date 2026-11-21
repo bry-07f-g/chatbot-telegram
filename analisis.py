@@ -170,7 +170,7 @@ EMOCIONES = [
      ["amargura", "amargado", "amargada"]),
     ("Desesperación", "compleja",
      ["no aguanto más", "no aguanto un segundo más", "ya no aguanto", "no puedo más", "ya no puedo más",
-      "no sé qué hacer", "todo se está derrumbando", "todo se derrumba", "no puedo seguir así", "no puedo seguir"],
+      "no sé qué hacer", "todo se está derrumbando", "todo se derrumba", "no puedo seguir así"],
      ["desesperado", "desesperada", "desesperación"]),
     ("Agotamiento emocional", "compleja",
      ["estoy agotado", "estoy agotada", "estoy cansado de todo", "estoy cansada de todo", "ya no tengo fuerzas",
@@ -198,7 +198,7 @@ _FUERTES = {normalizar(x) for x in [
     "me tienes hasta aquí", "no quiero volver a saber nada", "cansado de luchar", "cansada de luchar", "no veo salida",
     "no hay salida", "ya no tiene sentido", "ya no tengo fuerzas", "nada va a cambiar", "ya nada importa",
     "me siento vacío", "me siento vacía", "no siento nada", "no tengo ganas de nada", "no puedo seguir así",
-    "no puedo seguir", "no puedo seguir soportando", "ya no puedo seguir soportando"]}
+    "no puedo seguir soportando", "ya no puedo seguir soportando"]}
 _EXTREMAS = {normalizar(x) for x in [
     "no aguanto un segundo más", "todo se está derrumbando", "todo se derrumba", "no veo ninguna salida"]}
 
@@ -343,8 +343,7 @@ _AUTOLESION_RE = re.compile(r"(?<!\w)me voy a (hacer|lastimar)(\s+\w+)?\s+dano(?
 _DISTRES = Patron(["no aguanto más", "no aguanto un segundo más", "ya no aguanto", "no puedo más", "ya no puedo más",
                    "hoy fue el límite", "todo se está derrumbando", "todo se derrumba", "no veo ninguna salida",
                    "no veo salida", "no hay salida", "ya no tiene sentido", "cansado de luchar", "cansada de luchar",
-                   "estoy cansado de todo", "estoy cansada de todo", "no puedo seguir así", "no puedo seguir",
-                   "no quiero seguir", "ya no quiero seguir", "no tiene sentido seguir"])
+                   "estoy cansado de todo", "estoy cansada de todo", "no puedo seguir así", "no tiene sentido seguir"])
 _AMENAZA_VIOLENTA = Patron(["te voy a pegar", "te voy a matar", "te voy a golpear", "te voy a hacer daño",
                             "voy a hacerte daño", "te voy a lastimar", "voy a lastimarte", "te voy a romper",
                             "te voy a acabar", "te mato", "te voy a destruir"])
@@ -464,6 +463,7 @@ def evaluar_riesgo(limpio, emociones, comp, intenciones):
     alto, moderado = [], []
 
     a = _buscar(_AUTOLESION, limpio)
+    frases = list(a)
     if a or _AUTOLESION_RE.search(limpio):
         flags["autolesion"] = True
         alto.append("Referencia explícita a morir o hacerse daño: " + (f"«{a[0]}»" if a else "«hacerse daño»"))
@@ -481,6 +481,7 @@ def evaluar_riesgo(limpio, emociones, comp, intenciones):
         alto.append(f"Posible situación de violencia o peligro: «{vs[0]}»")
 
     d = _buscar(_DISTRES, limpio)
+    frases += d
     if d and not flags["autolesion"]:
         flags["ambiguo"] = True
         moderado.append(f"Expresión de agotamiento o desesperación («{d[0]}») sin mención explícita de hacerse daño; "
@@ -515,7 +516,7 @@ def evaluar_riesgo(limpio, emociones, comp, intenciones):
         inc = "Es una lectura basada solo en este mensaje; el riesgo puede cambiar con más contexto."
     else:
         inc = "Es una estimación cualitativa a partir del texto; no es una medición clínica."
-    return {"nivel": nivel, "indicadores": ind[:5], "incertidumbre": inc, "flags": flags}
+    return {"nivel": nivel, "indicadores": ind[:5], "incertidumbre": inc, "flags": flags, "frases": frases}
 
 
 # ─── Análisis completo ────────────────────────────────
@@ -591,6 +592,7 @@ def analizar(texto, modelo_emocion=None, modelo_agresivo=False):
         notas.append("Está escrito en mayúsculas, pero eso por sí solo no indica enojo.")
 
     return {
+        "texto": texto,
         "emociones": emociones, "principal": emociones[0] if emociones else None,
         "secundarias": emociones[1:5], "acumulado": acumulado, "simultaneas": simultaneas,
         "intenciones": intenciones, "comportamientos": comp, "estilo": estilo, "riesgo": riesgo,

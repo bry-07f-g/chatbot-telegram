@@ -2,6 +2,9 @@
 #
 # Las respuestas sugeridas son plantillas escritas a mano (no las inventa un modelo), elegidas
 # según la emoción principal, la intención, el comportamiento y el riesgo del análisis.
+import random
+
+import redactor
 from analisis import NIVELES
 
 # ─── Respuesta empática por emoción ───────────────────
@@ -225,9 +228,7 @@ def recomendar(a):
                         "Recomendar ayuda inmediata: servicios de emergencia (123 en Colombia) o un profesional."]
         rec["cuando"] = "Ahora, sin esperar: la seguridad va primero."
         rec["seguridad"] = "Sí, es la prioridad. Si hay riesgo inmediato, llama al 123 o a los servicios de emergencia de tu zona."
-        rec["responder"] = [("Directa y cercana",
-                             "Gracias por decírmelo, me importa lo que sientes y quiero tomarlo en serio. ¿Estás a salvo ahora mismo? "
-                             "¿Estás pensando en hacerte daño o en quitarte la vida? Estoy aquí contigo."),
+        rec["responder"] = [("Directa y cercana", random.choice(redactor.SEGURIDAD_EXPLICITA).format(c=redactor.frase_riesgo(a))),
                             ("Si hay peligro inmediato",
                              "Me preocupa tu seguridad. Por favor llama al 123 o dile a alguien que esté cerca de ti ahora mismo. "
                              "Yo me quedo contigo mientras tanto.")]
@@ -313,25 +314,11 @@ def recomendar(a):
         rec["seguridad"] = ("Sí. Frases como estas merecen una pregunta directa («¿estás a salvo? ¿has pensado en hacerte daño?»), "
                             "aunque por sí solas no demuestran esa intención. Si dice que sí, busca ayuda (123 en Colombia).")
 
-    # Respuestas
-    variantes = []
+    # Respuestas redactadas con lo que dijo la persona (ver redactor.py)
+    variantes = redactor.componer(a)
     if f["ambiguo"]:
-        variantes.append(("Con pregunta de seguridad",
-                          "Veo que estás pasando por un momento muy difícil y que llevas tiempo acumulando cosas. No quiero discutir "
-                          "ni minimizar lo que sientes; me gustaría entender qué te llevó a este punto. Pero antes quiero preguntarte "
-                          "algo importante: cuando dices que ya no aguantas más, ¿te refieres a terminar esta situación o has pensado "
-                          "en hacerte daño?"))
-    else:
-        if p["nombre"]:
-            variantes.append(("Empática", EMPATICA.get(p["nombre"], guia["neutral"])))
-    for n in intents:
-        if n in POR_INTENCION and n != "Amenaza":
-            variantes.append((f"Según su intención ({n.lower()})", POR_INTENCION[n]))
-            break
-    variantes.append(("Neutral", guia["neutral"]))
-    variantes.append(("Firme", guia["firme"]))
-    if not hostil:
-        variantes.append(("Conciliadora", guia["conciliadora"]))
+        pregunta = random.choice(redactor.PREGUNTA_SEGURIDAD).format(c=redactor.frase_riesgo(a))
+        variantes = [("Con pregunta de seguridad", pregunta)] + [v for v in variantes if v[0] not in ("Empática", "Firme")]
     rec["responder"] = variantes[:5]
     if hostil or "Provocación" in intents or (fam == "enojo" and p["intensidad"] >= 4):
         rec["esperar"] = "No siempre hace falta responder: esperar, tomar distancia o no seguir la discusión también es una buena opción."

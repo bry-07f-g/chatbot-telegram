@@ -178,7 +178,7 @@ El bot sigue un modelo de análisis emocional y de comunicación. Para cada mens
 
 **Seguridad:** ante referencias a hacerse daño, amenazas de violencia o violencia sufrida, el riesgo es alto, el bot prioriza la seguridad, sugiere preguntar directamente si la persona está a salvo y recomienda ayuda (123 en Colombia). Una amenaza de autolesión nunca se trata como simple manipulación.
 
-**Capas técnicas:** modelos de IA de `pysentimiento` (emoción y agresividad) que corroboran el análisis, más un léxico en español (con normalización de tildes y letras repetidas) y reglas de contexto en `analisis.py`. Las respuestas sugeridas son plantillas escritas a mano en `respuestas.py`.
+**Capas técnicas:** modelos de IA de `pysentimiento` (emoción y agresividad) que corroboran el análisis, más un léxico en español (con normalización de tildes y letras repetidas) y reglas de contexto en `analisis.py`. Las respuestas sugeridas se arman en `respuestas.py` y `redactor.py` con piezas escritas a mano: citan las palabras de la persona, combinan emoción e intención y tienen varias formas de decir lo mismo para no repetirse.
 
 > El análisis es orientativo, basado solo en el texto. No es un diagnóstico psicológico.
 
@@ -192,7 +192,8 @@ chatbot-telegram/
 ├── bot.py                 # Código principal del bot de Telegram
 ├── predict.py             # Carga los modelos de IA y lanza el análisis
 ├── analisis.py            # Emociones, intención, comportamiento y riesgo
-├── respuestas.py          # Qué significa, cómo actuar y qué responder
+├── respuestas.py          # Qué significa, cómo actuar y qué evitar
+├── redactor.py            # Redacta las respuestas sugeridas según el análisis
 ├── traductor.py           # Comando /traducir
 ├── requirements.txt       # Dependencias del proyecto
 ├── README.md              # Documentación
