@@ -1,6 +1,6 @@
 # 🤖 Chat Analyzer Bot
 
-**Chat Analyzer Bot** es un bot de Telegram que utiliza Inteligencia Artificial y Procesamiento de Lenguaje Natural (NLP) para analizar mensajes de texto en español. El bot detecta emociones, toxicidad, intención comunicativa, nivel de ghosting y riesgo de conflicto, **ofreciendo sugerencias sobre cómo responder** a cada mensaje.
+**Chat Analyzer Bot** es un bot de Telegram que utiliza Inteligencia Artificial y Procesamiento de Lenguaje Natural (NLP) para analizar mensajes de texto en español. El bot detecta emociones (principales y secundarias, con intensidad), intención comunicativa, comportamiento y nivel de riesgo, y **explica qué significa el mensaje, cómo actuar y qué responder**.
 
 ---
 
@@ -24,13 +24,12 @@
 
 | Característica | Descripción |
 |----------------|-------------|
-| 🎭 **Análisis Emocional** | Detecta 7 emociones: positivo, tristeza, enojo, sorpresa, disgusto, miedo, neutral |
-| 🚫 **Detección de Toxicidad** | Identifica lenguaje ofensivo, agresivo o dañino |
-| 🧠 **Clasificación de Intención** | Reconoce 12 intenciones: afecto, reclamo, celos, agresión, ruptura, manipulación, control, desinterés, inseguridad, curiosidad, tristeza, normal |
-| 💔 **Métrica de Ghosting** | Calcula probabilidad de desinterés o distanciamiento (0-95%) |
-| 🔥 **Evaluación de Riesgo** | 3 niveles: 🔴 Alto, 🟡 Medio, 🟢 Bajo |
-| 💬 **Sugerencias de Respuesta** | Te dice **cómo responder** al mensaje que recibiste |
-| 📊 **Interfaz Amigable** | Respuestas formateadas con emojis y barras de progreso |
+| 🎭 **Emociones múltiples** | Más de 30 emociones y estados (alegría, tristeza, enojo, miedo, asco, sorpresa y complejas como culpa, celos, agotamiento o ambivalencia), con intensidad 1-5 y evidencias |
+| 🧠 **Intención comunicativa** | Desahogo, apoyo, soluciones, reclamo, límites, reconciliación, validación, provocación, amenaza, manipulación |
+| 🗣️ **Comportamiento** | Insultos, descalificación, culpabilización, chantaje emocional, pasivo-agresividad, evasión y más |
+| 🛟 **Riesgo cualitativo** | Bajo, moderado o alto, con indicadores; prioriza la seguridad ante autolesión o violencia |
+| 💬 **Respuestas sugeridas** | Empática, neutral, firme y conciliadora, más qué hacer y qué evitar |
+| 🌐 **Traductor** | `/traducir <idioma> <texto>` con audio de pronunciación |
 
 ---
 
@@ -43,7 +42,6 @@
 | **Transformers** | 4.6.1+ | Modelos BERT para análisis de texto |
 | **PyTorch** | 2.0+ | Deep learning |
 | **python-telegram-bot** | 20.7 | Framework del bot |
-| **scikit-learn** | - | Utilidades de ML |
 
 ---
 
@@ -82,7 +80,8 @@ python-telegram-bot>=22.0
 pysentimiento>=0.7.3
 transformers>=4.6.1
 torch>=2.0.0
-scikit-learn
+deep-translator
+gTTS
 ```
 
 ---
@@ -144,53 +143,44 @@ Verás algo como:
 |---------|----------|
 | `/start` | Saludo e introducción |
 | `/ayuda` | Lista de comandos |
-| `/aprendizaje` | Cuántos mensajes ha aprendido de tus correcciones |
 | `/traducir <idioma> <texto>` | Traduce el texto y envía un audio con la pronunciación. Ej: `/traducir japonés hola como estas` |
 
 ---
 
 ## 📝 Ejemplos de Mensajes
 
-| Mensaje que te envían | Emoción | Intención | Toxicidad | Riesgo | Sugerencia de respuesta |
-|-----------------------|---------|-----------|-----------|--------|------------------------|
-| "te quiero mucho" | Positivo | Afecto | Baja | Bajo | "Yo también te quiero mucho ❤️" |
-| "por qué no me respondes" | Tristeza | Reclamo | Baja | Medio | "Entiendo que te sientes ignorado, no fue mi intención" |
-| "con quién estabas" | Enojo | Celos | Baja | Medio | "No hay nadie más, pero entiendo tu inseguridad" |
-| "eres un idiota" | Enojo | Agresión | Alta | Alto | "Esto se está poniendo feo, hablemos más tarde" |
-| "ok" | Neutral | Desinterés | Baja | Bajo | "¿Estás bien? Parece que no tienes ganas de hablar" |
-| "cómo estás" | Positivo | Curiosidad | Baja | Bajo | "Todo bien, ¿y tú? Cuéntame" |
-| "quiero terminar" | Tristeza | Ruptura | Baja | Medio | "Hablemos esto en persona, es importante" |
-| "estoy triste" | Tristeza | Tristeza | Baja | Bajo | "Estoy aquí para ti. ¿Quieres hablar de lo que pasa?" |
-
-### Ejemplo de respuesta del bot:
-
-```
-💕 *Análisis del mensaje que te enviaron*
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-😊 *Emoción detectada:* Positivo
-🚩 *Toxicidad:* 🟢 Baja
-🧠 *Intención:* Afecto
-💔 *Ghosting:* ░░░░░░░░░░ 0%
-🔥 *Riesgo:* 🟢 Bajo
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-💡 *Qué significa:*
-Está expresando cariño y buenos sentimientos. Quiere acercarse y fortalecer el vínculo.
-
-💬 *Cómo responder:*
-🌸 Corresponde: 'Yo también te quiero mucho ❤️'
-```
+| Mensaje que te envían | Qué detecta |
+|-----------------------|-------------|
+| `Te quiero, pero ya no puedo seguir soportando lo que haces` | Afecto + agotamiento + frustración, con ambivalencia |
+| `Hoy fue el límite, no aguanto un segundo más` | Desesperación muy alta, intención de límites, riesgo moderado y pregunta directa de seguridad |
+| `Siempre haces lo mismo y nunca reconoces tus errores` | Reclamo con generalizaciones, riesgo bajo |
+| `Si realmente me quisieras, harías lo que te pido` | Posible manipulación emocional (con cautela) |
+| `Si vuelves a hacerlo, voy a hacerte daño` | Amenaza, riesgo alto, recomienda no provocar y buscar ayuda |
+| `ok` | Sin información suficiente; no se asume indiferencia |
 
 ---
 
-## 🧠 Cómo analiza y cómo aprende
+## 🧠 Cómo analiza los mensajes
 
-1. **Modelos de IA** (pysentimiento): emoción y agresividad/odio del mensaje.
-2. **Léxico en español**: detecta insultos, amenazas, groserías y emociones aunque el texto venga con tildes mal puestas, letras repetidas (`idiotaaa`) o escrito tipo `1d10ta`. También marca MAYÚSCULAS sostenidas y exceso de signos de exclamación.
-3. **Reglas de intención** por frases (reclamo, celos, ruptura, etc.).
-4. **Memoria que aprende**: bajo cada análisis el bot muestra los botones ✅ Acertó / ✏️ Corregir. Cada respuesta se guarda en `aprendizaje.json` y los mensajes parecidos usan la intención aprendida, incluso después de reiniciar el bot. Ese archivo es local y no se sube a GitHub.
-5. **Ideas para resolverlo**: por cada intención el bot sugiere pasos concretos, una respuesta lista para enviar y un consejo.
+El bot sigue un modelo de análisis emocional y de comunicación. Para cada mensaje entrega **9 secciones**:
 
-Si el mensaje menciona hacerse daño, el bot lo marca como riesgo alto y recomienda buscar apoyo (línea 123 si hay peligro inmediato).
+1. **Emociones detectadas**: principal y secundarias, con intensidad de 1 a 5 y la evidencia (frases del texto) que las respalda.
+2. **Estado emocional**: malestar acumulado y emociones simultáneas (por ejemplo, cariño y agotamiento a la vez).
+3. **Intención comunicativa**: desahogo, apoyo, soluciones, reclamo, límites, reconciliación, validación, provocación, amenaza, manipulación emocional.
+4. **Comportamiento comunicativo**: estilo (asertivo, agresivo, pasivo-agresivo, mixto) y señales como insultos, culpabilización o chantaje emocional.
+5. **Nivel de riesgo**: bajo, moderado o alto, con indicadores y su incertidumbre. No usa porcentajes porque no hay un modelo validado que los respalde.
+6. **¿Qué significa?**
+7. **¿Cómo debes actuar?**: qué hacer, cuándo responder, límites, espacio y seguridad.
+8. **¿Qué puedes responder?**: respuestas empática, neutral, firme y conciliadora.
+9. **¿Qué debes evitar?**
+
+**Reglas para no equivocarse:** una palabra suelta no basta (se marca como "posible"); las MAYÚSCULAS no equivalen a enojo; se tienen en cuenta negaciones, sarcasmo y humor; una respuesta corta ("ok") no se interpreta como indiferencia; el límite de otra persona no se confunde con agresión; si no hay información suficiente, el bot lo dice.
+
+**Seguridad:** ante referencias a hacerse daño, amenazas de violencia o violencia sufrida, el riesgo es alto, el bot prioriza la seguridad, sugiere preguntar directamente si la persona está a salvo y recomienda ayuda (123 en Colombia). Una amenaza de autolesión nunca se trata como simple manipulación.
+
+**Capas técnicas:** modelos de IA de `pysentimiento` (emoción y agresividad) que corroboran el análisis, más un léxico en español (con normalización de tildes y letras repetidas) y reglas de contexto en `analisis.py`. Las respuestas sugeridas son plantillas escritas a mano en `respuestas.py`.
+
+> El análisis es orientativo, basado solo en el texto. No es un diagnóstico psicológico.
 
 ---
 
@@ -200,17 +190,12 @@ Si el mensaje menciona hacerse daño, el bot lo marca como riesgo alto y recomie
 chatbot-telegram/
 │
 ├── bot.py                 # Código principal del bot de Telegram
-├── predict.py             # Motor de análisis: IA + léxico + reglas
-├── aprendizaje.py         # Memoria que aprende de las correcciones
+├── predict.py             # Carga los modelos de IA y lanza el análisis
+├── analisis.py            # Emociones, intención, comportamiento y riesgo
+├── respuestas.py          # Qué significa, cómo actuar y qué responder
 ├── traductor.py           # Comando /traducir
 ├── requirements.txt       # Dependencias del proyecto
 ├── README.md              # Documentación
-│
-└── models/                # (Opcional) Modelos entrenados personalizados
-    ├── modelo_emociones.pkl
-    ├── modelo_toxicidad.pkl
-    ├── modelo_intencion.pkl
-    └── vectorizer.pkl
 ```
 
 ---
