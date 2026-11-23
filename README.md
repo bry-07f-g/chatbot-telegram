@@ -162,7 +162,7 @@ Verás algo como:
 
 ## 🧠 Cómo analiza los mensajes
 
-El bot sigue un modelo de análisis emocional y de comunicación. Para cada mensaje entrega **9 secciones**:
+El bot sigue un modelo de análisis emocional y de comunicación y responde con **un solo mensaje corto**: emoción principal (con intensidad y emociones secundarias), intención, riesgo, qué significa, cómo actuar, qué responder y qué evitar. El botón **💬 Más respuestas** muestra las demás opciones (empática, neutral, firme y conciliadora). Si el mensaje no tiene carga emocional, lo lee como tono neutro y sugiere igualmente cómo responder. El análisis completo tiene estas partes:
 
 1. **Emociones detectadas**: principal y secundarias, con intensidad de 1 a 5 y la evidencia (frases del texto) que las respalda.
 2. **Estado emocional**: malestar acumulado y emociones simultáneas (por ejemplo, cariño y agotamiento a la vez).
@@ -174,7 +174,7 @@ El bot sigue un modelo de análisis emocional y de comunicación. Para cada mens
 8. **¿Qué puedes responder?**: respuestas empática, neutral, firme y conciliadora.
 9. **¿Qué debes evitar?**
 
-**Reglas para no equivocarse:** una palabra suelta no basta (se marca como "posible"); las MAYÚSCULAS no equivalen a enojo; se tienen en cuenta negaciones, sarcasmo y humor; una respuesta corta ("ok") no se interpreta como indiferencia; el límite de otra persona no se confunde con agresión; si no hay información suficiente, el bot lo dice.
+**Reglas para no equivocarse:** una palabra suelta no basta (se marca como "posible"); las MAYÚSCULAS no equivalen a enojo; se tienen en cuenta negaciones, sarcasmo y humor; una respuesta corta ("ok") no se interpreta como indiferencia; el límite de otra persona no se confunde con agresión; un mensaje sin carga emocional se trata como tono neutro y siempre recibe una respuesta sugerida.
 
 **Seguridad:** ante referencias a hacerse daño, amenazas de violencia o violencia sufrida, el riesgo es alto, el bot prioriza la seguridad, sugiere preguntar directamente si la persona está a salvo y recomienda ayuda (123 en Colombia). Una amenaza de autolesión nunca se trata como simple manipulación.
 

@@ -174,39 +174,32 @@ def _lista(items):
 
 
 def _significado(a):
+    """Explicación corta (1-3 frases). Siempre dice algo útil, incluso si el mensaje es neutro."""
     comp = a["comportamientos"]
     if a["cotidiano"] == "saludo":
-        return "Es un saludo: no hay carga emocional destacada. Normalmente solo busca iniciar o retomar la conversación."
+        return "Es un saludo amable; solo busca iniciar o retomar la conversación."
     if a["cotidiano"] == "agradecimiento":
-        return "Es un agradecimiento: transmite buena disposición y no muestra señales de conflicto."
-    if not a["suficiente"]:
-        return ("Con este mensaje no hay información suficiente para identificar emociones o intenciones con seguridad. "
-                "Conviene no suponer y preguntar con calma qué quiere decir.")
+        return "Es un agradecimiento; transmite buena disposición y no hay conflicto."
     p = a["principal"]
     if not p:
-        txt = "El mensaje es breve y no muestra emociones claras."
         if "Evasión" in comp:
-            txt += (" Una respuesta corta puede significar cansancio, necesidad de espacio, acuerdo o desinterés; "
-                    "sin contexto no se puede saber cuál.")
-        return txt
-    partes = []
+            return ("Respuesta breve: puede ser acuerdo, cansancio o necesidad de espacio. "
+                    "No le des más peso del que tiene.")
+        return "Mensaje de tono neutro, sin carga emocional fuerte. Lo más probable es que solo busque seguir la conversación."
     ev = [x for x in p["evidencias"] if not x.startswith("(")]
-    base = (f"El mensaje parece expresar sobre todo {p['nombre'].lower()} "
-            f"(intensidad {NIVELES[p['intensidad']]}, {p['certeza']})")
+    txt = f"Parece expresar {p['nombre'].lower()} ({NIVELES[p['intensidad']]})"
     if ev:
-        base += " por expresiones como " + _lista(f"«{x}»" for x in ev[:3])
-    partes.append(base + ".")
-    if a["secundarias"]:
-        partes.append("También aparecen: " + _lista(e["nombre"].lower() for e in a["secundarias"][:4]) + ".")
+        txt += f" por «{ev[0]}»"
+    txt += "."
     if a["acumulado"]:
-        partes.append("Hay señales de malestar acumulado (" + _lista(f"«{x}»" for x in a["acumulado"][:2]) +
-                      "): no parece venir solo de este momento.")
-    partes += a["simultaneas"]
+        txt += " Hay señales de malestar acumulado."
+    if a["simultaneas"]:
+        txt += " " + a["simultaneas"][0]
+    elif a["secundarias"]:
+        txt += " También aparece " + a["secundarias"][0]["nombre"].lower() + "."
     if a["intenciones"]:
-        partes.append("Parece buscar: " + _lista(n.lower() for n, _ in a["intenciones"][:3]) + ".")
-    partes += a["notas"][:1]
-    partes.append("Es una lectura posible a partir del texto, no una certeza sobre lo que la persona siente.")
-    return " ".join(partes)
+        txt += " Parece buscar: " + a["intenciones"][0][0].lower() + "."
+    return txt
 
 
 def recomendar(a):
@@ -268,12 +261,14 @@ def recomendar(a):
         return rec
 
     if not p and not intents and not hostil:
-        rec["hacer"] = ["No suponer: no hay datos suficientes.", "Preguntar con calma qué quiso decir."]
-        rec["cuando"] = "Cuando puedas; no hay urgencia aparente."
-        rec["espacio"] = "Puede que necesite espacio; respétalo si lo pide."
-        rec["responder"] = [("Neutral", "¿Todo bien? Siento que quieres decirme algo; cuéntame si quieres."),
-                            ("Conciliadora", "Aquí estoy cuando quieras hablar, sin presión.")]
-        rec["evitar"] = ["Interpretar una respuesta corta como indiferencia sin contexto.", "Atribuirle intenciones que el texto no muestra."]
+        pregunta = "?" in a["texto"]
+        rec["hacer"] = (["Responder directamente a lo que pregunta, con calma."] if pregunta else
+                        ["Responder con naturalidad, sin darle más peso del necesario."]) + \
+                       ["Si te queda la duda, pregunta con calma qué quiso decir."]
+        rec["cuando"] = "Cuando puedas; no hay urgencia."
+        rec["responder"] = [("Natural", random.choice(["Claro, cuéntame más.", "Entiendo. ¿Y tú cómo vas?", "Aquí estoy, dime."])),
+                            ("Para aclarar", random.choice(["¿Todo bien? Cuéntame si quieres.", "¿Quieres que hablemos de eso con calma?"]))]
+        rec["evitar"] = ["Interpretarlo como indiferencia sin contexto.", "Atribuirle intenciones que el texto no muestra."]
         return rec
 
     # 3) Caso general ────────────────────────────────

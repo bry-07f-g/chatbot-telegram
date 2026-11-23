@@ -2,9 +2,11 @@ import asyncio
 import html
 import os
 
-from telegram import Update
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.constants import ParseMode
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
+from telegram.ext import (
+    ApplicationBuilder, CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler, filters,
+)
 
 import traductor
 from analisis import NIVELES
@@ -45,71 +47,63 @@ def _linea_emocion(e):
     return texto + (f"\n    Evidencia: {ev}" if ev else "")
 
 
-def formatear_analisis(a):
-    L = ["🔎 <b>ANÁLISIS DEL MENSAJE</b>", "━━━━━━━━━━━━━━━━━━━━", "", "<b>1. EMOCIONES DETECTADAS</b>"]
-    if a["principal"]:
-        L.append("<u>Principal</u>")
-        L.append(_linea_emocion(a["principal"]))
-        if a["secundarias"]:
-            L.append("<u>Secundarias</u>")
-            L += [_linea_emocion(e) for e in a["secundarias"]]
-    else:
-        L.append("No se detectan emociones con claridad en este mensaje.")
-    for n in a["notas"]:
-        L.append(f"⚠️ <i>{esc(n)}</i>")
+def _corto(texto, n=110):
+    texto = texto.split(";")[0].strip()
+    return texto if len(texto) <= n else texto[:n].rsplit(" ", 1)[0] + "…"
 
-    L += ["", "<b>2. ESTADO EMOCIONAL</b>"]
-    if a["principal"]:
-        nombres = [e["nombre"].lower() for e in a["emociones"][:4]]
-        L.append("Posible estado: " + esc(", ".join(nombres)) + ".")
-    else:
-        L.append("No hay información suficiente para describirlo.")
-    L.append("Sentimientos acumulados: " + (
-        "sí, hay señales (" + ", ".join(f"«{esc(x)}»" for x in a["acumulado"][:2]) + ")." if a["acumulado"]
-        else "no se observan señales claras."))
-    L.append("Emociones simultáneas o contradicciones: " + (esc(" ".join(a["simultaneas"])) if a["simultaneas"] else "no se observan."))
 
-    L += ["", "<b>3. INTENCIÓN COMUNICATIVA</b>"]
-    if a["intenciones"]:
-        L += [f"• <b>{esc(n)}</b> — {esc(j)}" for n, j in a["intenciones"][:4]]
-    else:
-        L.append("No se identifica una intención clara con la información disponible.")
+def elegir_respuestas(rec):
+    """Muestra 2 respuestas (la principal y la más útil de las otras); el resto va en el botón «Más respuestas»."""
+    todas = rec["responder"]
+    if len(todas) <= 2:
+        return todas, []
+    segunda = next((v for v in todas[1:] if v[0].startswith("Según")), None) \
+        or next((v for v in todas[1:] if v[0] in ("Firme", "Conciliadora")), todas[1])
+    return [todas[0], segunda], [v for v in todas if v not in (todas[0], segunda)]
 
-    L += ["", "<b>4. COMPORTAMIENTO COMUNICATIVO</b>", f"Estilo: <b>{esc(a['estilo'])}</b>"]
-    if a["comportamientos"]:
-        for nombre, d in a["comportamientos"].items():
-            ev = ", ".join(f"«{esc(x)}»" if not x.startswith("(") else esc(x) for x in d["evidencias"])
-            L.append(f"• {esc(nombre)}: {ev}" + (f"\n    <i>{esc(d['nota'])}</i>" if d["nota"] else ""))
+
+def _respuestas_html(variantes):
+    return "\n".join(f"<b>{esc(e)}:</b> “{esc(t)}”" for e, t in variantes)
+
+
+def formatear_compacto(a, rec, mostrar):
+    """Un solo mensaje corto con lo esencial. Siempre dice algo útil, incluso si el mensaje es neutro."""
+    p = a["principal"]
+    if p:
+        L = [f"{EMOJI_FAMILIA.get(p['familia'], '•')} <b>{esc(p['nombre'])}</b> · intensidad {p['intensidad']}/5 ({NIVELES[p['intensidad']]})"]
+        otras = [e["nombre"].lower() for e in a["secundarias"][:3]]
+        if otras:
+            L.append("También: " + esc(", ".join(otras)))
     else:
-        L.append("No se observan insultos, amenazas, culpabilización ni presión emocional.")
+        L = ["😐 <b>Tono neutro</b> · sin carga emocional fuerte"]
+
+    intenciones = [n for n, _ in a["intenciones"][:2]]
+    if not intenciones:
+        hostil = any(k in a["comportamientos"] for k in ("Insultos", "Descalificación", "Desprecio", "Agresión verbal"))
+        intenciones = ["Expresar enojo" if hostil else
+                       {"saludo": "Saludo", "agradecimiento": "Agradecimiento"}.get(a["cotidiano"], "Seguir la conversación")]
+    L.append("🎯 <b>Intención:</b> " + esc(" · ".join(intenciones)))
 
     r = a["riesgo"]
-    L += ["", "<b>5. NIVEL DE RIESGO</b>", f"{EMOJI_RIESGO[r['nivel']]} <b>{r['nivel'].capitalize()}</b>"]
-    L += [f"• {esc(i)}" for i in r["indicadores"]]
-    L.append(f"<i>Incertidumbre: {esc(r['incertidumbre'])}</i>")
-    return "\n".join(L)
+    riesgo = f"{EMOJI_RIESGO[r['nivel']]} <b>Riesgo:</b> {r['nivel'].capitalize()}"
+    if r["nivel"] != "bajo" and r["indicadores"]:
+        riesgo += " — " + esc(_corto(r["indicadores"][0]))
+    L.append(riesgo)
+    if a["comportamientos"]:
+        L.append(f"🗣️ <b>Estilo:</b> {esc(a['estilo'])} ({esc(', '.join(list(a['comportamientos'])[:3]).lower())})")
 
-
-def formatear_recomendaciones(rec):
-    L = ["🧭 <b>6. ¿QUÉ SIGNIFICA?</b>", esc(rec["significado"]), "", "<b>7. ¿CÓMO DEBES ACTUAR?</b>"]
-    L += [f"• {esc(x)}" for x in rec["hacer"]]
-    L.append(f"⏱️ <b>Cuándo responder:</b> {esc(rec['cuando'])}")
+    L += ["", "💡 " + esc(rec["significado"]), "", "🧭 <b>Cómo actuar</b>"]
+    L += [f"• {esc(x)}" for x in rec["hacer"][:2]]
+    L.append(f"⏱️ {esc(rec['cuando'])}")
     if rec["limites"]:
-        L.append(f"🚧 <b>Límites:</b> {esc(rec['limites'])}")
-    if rec["espacio"]:
-        L.append(f"🌿 <b>Dar espacio:</b> {esc(rec['espacio'])}")
+        L.append(f"🚧 {esc(rec['limites'])}")
     if rec["seguridad"]:
-        L.append(f"🛟 <b>Seguridad:</b> {esc(rec['seguridad'])}")
+        L.append(f"🛟 {esc(_corto(rec['seguridad'], 200))}")
 
-    L += ["", "<b>8. ¿QUÉ PUEDES RESPONDER?</b>"]
-    for etiqueta, texto in rec["responder"]:
-        L.append(f"💬 <b>{esc(etiqueta)}:</b>\n“{esc(texto)}”")
+    L += ["", "💬 <b>Puedes responder</b>", _respuestas_html(mostrar)]
     if rec["esperar"]:
-        L.append(f"💤 {esc(rec['esperar'])}")
-
-    L += ["", "<b>9. ¿QUÉ DEBES EVITAR?</b>"]
-    L += [f"• {esc(x)}" for x in rec["evitar"]]
-    L += ["", "ℹ️ <i>Análisis orientativo basado solo en el texto del mensaje. No es un diagnóstico ni una medición clínica.</i>"]
+        L.append("💤 También puedes esperar o no responder.")
+    L += ["", "🚫 <b>Evita:</b> " + esc(" · ".join(rec["evitar"][:2])), "", "<i>Lectura orientativa, no es un diagnóstico.</i>"]
     return "\n".join(L)
 
 
@@ -168,17 +162,44 @@ async def traducir(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ─── Handler principal ──────────────────────────────────
 
+MAS_MAX = 200
+
+
 async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    texto = update.message.text
     try:
-        texto = update.message.text
         analisis = await asyncio.to_thread(analizar_texto, texto)
         rec = recomendar(analisis)
-        for bloque in (formatear_analisis(analisis), formatear_recomendaciones(rec)):
-            for trozo in partir(bloque):
-                await update.message.reply_text(trozo, parse_mode=ParseMode.HTML)
+        mostrar, resto = elegir_respuestas(rec)
+        mensaje = formatear_compacto(analisis, rec, mostrar)
+        teclado = None
+        if resto:
+            guardadas = context.bot_data.setdefault("mas_respuestas", {})
+            guardadas[(update.effective_chat.id, update.message.message_id)] = resto
+            while len(guardadas) > MAS_MAX:
+                guardadas.pop(next(iter(guardadas)))
+            teclado = InlineKeyboardMarkup([[InlineKeyboardButton("💬 Más respuestas", callback_data=f"mas|{update.message.message_id}")]])
+        await update.message.reply_text(mensaje[:MAX_TELEGRAM], parse_mode=ParseMode.HTML, reply_markup=teclado)
     except Exception as e:
+        # Aunque algo falle, siempre se responde con algo útil
         print(f"❌ Error: {e}")
-        await update.message.reply_text("⚠️ Ocurrió un error al procesar el mensaje.")
+        await update.message.reply_text(
+            "😐 Tono neutro · sin carga emocional fuerte\n\n💬 Puedes responder: “Claro, cuéntame más, te escucho.”")
+
+
+async def mas_respuestas(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    q = update.callback_query
+    await q.answer()
+    try:
+        clave = (q.message.chat_id, int(q.data.split("|")[1]))
+        resto = context.bot_data.get("mas_respuestas", {}).get(clave)
+        await q.edit_message_reply_markup(reply_markup=None)
+        if resto:
+            await q.message.reply_text("💬 <b>Más respuestas</b>\n" + _respuestas_html(resto), parse_mode=ParseMode.HTML)
+        else:
+            await q.message.reply_text("Envíame el mensaje otra vez y te doy más respuestas.")
+    except Exception as e:
+        print(f"❌ Error en botón: {e}")
 
 
 # ─── Inicialización ─────────────────────────────────────
@@ -191,6 +212,7 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("ayuda", ayuda))
     app.add_handler(CommandHandler("traducir", traducir))
+    app.add_handler(CallbackQueryHandler(mas_respuestas, pattern="^mas"))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, responder))
 
     print("🟢 Bot corriendo... Esperando mensajes")

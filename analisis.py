@@ -9,7 +9,7 @@
 #     que ya fue detectada; no crean enojo por sí solos.
 #   - Negaciones ("no estoy triste"), sarcasmo y humor se tienen en cuenta.
 #   - El riesgo es cualitativo (bajo / moderado / alto), con indicadores y su incertidumbre.
-#   - Si no hay información suficiente, lo dice en vez de inventar.
+#   - Si el mensaje no tiene carga emocional, lo lee como tono neutro (nunca se queda sin respuesta).
 import re
 import unicodedata
 
@@ -450,7 +450,7 @@ def clasificar_estilo(comp, intenciones):
     if asertivo and not agresivo:
         estilos.append("asertiva")
     if not estilos:
-        return "No se puede determinar con este mensaje"
+        return "Neutral (sin señales de conflicto)"
     if len(estilos) == 1:
         return estilos[0].capitalize()
     return "Mixta (" + " + ".join(estilos) + ")"
